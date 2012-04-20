@@ -5,6 +5,15 @@ if ('function' == typeof require) {
 }
 
 describe('qs.parse()', function(){
+
+  var origmaxarraylength;
+
+  // Store original maxarraylength before starting tests
+  before(function() { origmaxarraylength = qs.maxarraylength; });
+
+  // After each test, reset maxarraylength to original
+  afterEach(function() { qs.maxarraylength = origmaxarraylength; });
+
   it('should support the basics', function(){
     expect(qs.parse('0=foo')).to.eql({ '0': 'foo' });
 
@@ -128,7 +137,7 @@ describe('qs.parse()', function(){
     expect(qs.parse('foo[bad]=baz&foo[0]=bar')).to.eql({ foo: { 0: "bar", bad: "baz" }});
   })
 
-  it('should transform arrays to objects if numeric keys are too large', function(){
+  it('should always transform arrays to objects if numeric keys are too large', function(){
     var o1 = qs.parse('foo[1]=bar&foo[999]=baz');
     var o2 = qs.parse('foo[1]=bar&foo[1000]=baz');
     var o3 = qs.parse('foo[8764942370194702]=bar&foo[89943370194702]=baz');
@@ -142,6 +151,15 @@ describe('qs.parse()', function(){
     
     expect(Array.isArray(o3.foo)).to.equal(false);
     expect(o3).to.eql({ foo: {'8764942370194702': 'bar', '89943370194702': 'baz'} });
+  })
+
+  it('should always transform arrays to objects if numeric keys are used and maxarraylength is 0', function(){
+    qs.maxarraylength = 0;
+
+    var o1 = qs.parse('foo[0]=bar&foo[1]=baz');
+    
+    expect(Array.isArray(o1.foo)).to.equal(false);
+    expect(o1).to.eql({ foo: {'0' : 'bar', '1': 'baz'}});
   })
 
   it('should support malformed uri chars', function(){
