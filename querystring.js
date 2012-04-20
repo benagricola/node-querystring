@@ -9,7 +9,7 @@
  * Library version.
  */
 
-exports.version = '0.4.2';
+exports.version = '0.4.3';
 
 /**
  * Object#toString() ref for stringify().
@@ -18,10 +18,18 @@ exports.version = '0.4.2';
 var toString = Object.prototype.toString;
 
 /**
- * Cache non-integer test regexp.
+ * Max length of arrays used for representation with numeric keys
  */
+exports.maxarraylength = 1000;
 
-var isint = /^[0-9]+$/;
+/**
+ * Check for validity of value as an integer key for an array.
+ * Implement max array length and don't accept negatives as valid keys.
+ */
+function isvalidintkey(value) {
+  var intval = parseInt(value);
+  return (intval == value && -1 < intval && intval < exports.maxarraylength);
+}
 
 function promote(parent, key) {
   if (parent[key].length == 0) return parent[key] = {};
@@ -58,11 +66,11 @@ function parse(parts, parent, key, val) {
       // prop
     } else if (~part.indexOf(']')) {
       part = part.substr(0, part.length - 1);
-      if (!isint.test(part) && Array.isArray(obj)) obj = promote(parent, key);
+      if (!isvalidintkey(part) && Array.isArray(obj)) obj = promote(parent, key);
       parse(parts, obj, part, val);
       // key
     } else {
-      if (!isint.test(part) && Array.isArray(obj)) obj = promote(parent, key);
+      if (!isvalidintkey(part) && Array.isArray(obj)) obj = promote(parent, key);
       parse(parts, obj, part, val);
     }
   }
@@ -80,7 +88,7 @@ function merge(parent, key, val){
     parse(parts, parent, 'base', val);
     // optimize
   } else {
-    if (!isint.test(key) && Array.isArray(parent.base)) {
+    if (!isvalidintkey(key) && Array.isArray(parent.base)) {
       var t = {};
       for (var k in parent.base) t[k] = parent.base[k];
       parent.base = t;

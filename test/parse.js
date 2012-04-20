@@ -128,6 +128,22 @@ describe('qs.parse()', function(){
     expect(qs.parse('foo[bad]=baz&foo[0]=bar')).to.eql({ foo: { 0: "bar", bad: "baz" }});
   })
 
+  it('should transform arrays to objects if numeric keys are too large', function(){
+    var o1 = qs.parse('foo[1]=bar&foo[999]=baz');
+    var o2 = qs.parse('foo[1]=bar&foo[1000]=baz');
+    var o3 = qs.parse('foo[8764942370194702]=bar&foo[89943370194702]=baz');
+
+    expect(Array.isArray(o1.foo)).to.equal(true);
+    expect(o1.foo[1]).to.eql('bar');
+    expect(o1.foo[999]).to.eql('baz');
+    
+    expect(Array.isArray(o2.foo)).to.equal(false);
+    expect(o2).to.eql({ foo: {'1' : 'bar', '1000': 'baz'}});
+    
+    expect(Array.isArray(o3.foo)).to.equal(false);
+    expect(o3).to.eql({ foo: {'8764942370194702': 'bar', '89943370194702': 'baz'} });
+  })
+
   it('should support malformed uri chars', function(){
     expect(qs.parse('{%:%}')).to.eql({ '{%:%}': '' });
     expect(qs.parse('foo=%:%}')).to.eql({ 'foo': '%:%}' });
